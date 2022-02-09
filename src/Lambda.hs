@@ -5,8 +5,7 @@ module Lambda
 , Expression (..)
 ) where
 
-
-type Variable = Char
+type Variable = String
 
 data Expression = Var Variable | Abstract Variable Expression | Apply Expression Expression deriving Eq
 
