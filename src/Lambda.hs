@@ -5,7 +5,6 @@ module Lambda
 , Expression (..)
 ) where
 
-import Data.Char (Char)
 
 type Variable = Char
 
@@ -38,29 +37,12 @@ betaReduce e = e
 -- | analogous to exp[m\x], m -> x in x, (replace all x with m in exp, m into x) 
 --   main expression -> expression to replace with -> variable to replace -> output expression
 substitute :: Expression -> Expression -> Variable -> Expression
-substitute exp@(Var v) m x 
+substitute t@(Var v) m x 
     | v == x    = m
-    | otherwise = exp
-substitute exp@(Abstract b e) m x 
+    | otherwise = t
+substitute t@(Abstract b e) m x 
     -- x is already bound, nothing to do here..
-    | b == x    = exp 
+    | b == x    = t 
     -- x is unbound
     | otherwise = Abstract b (substitute e m x)
 substitute (Apply e1 e2) m x = Apply (substitute e1 m x) (substitute e2 m x)
-
--- tests TODO: should remove
-
-x = 'x' :: Variable
-y = 'y' :: Variable
-z = 'z' :: Variable
-
-t1 = Abstract x (Var x)
-t2 = Abstract x (Abstract y (Var y))
-t3 = Abstract x (Abstract x (Var x))
-t4 = Abstract x (Apply (Abstract y (Var y)) (Abstract z (Var z)))
-
-t5 = Abstract x (Apply (Apply (Abstract y (Var y)) (Abstract z (Var z))) (Var x))
-t6 = Abstract x (Apply (Var x) (Var x))
-
-id' = Abstract x (Var x)
-t1' = Apply id' (Var y)
