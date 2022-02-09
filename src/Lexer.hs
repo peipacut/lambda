@@ -2,11 +2,12 @@ module Lexer where
 
 import Lambda 
 
+data StackAlphabet = Z | Open
+data State = StartS | VarS | AbsS | AppS
+
 parseToExpression :: String -> Expression
-parseToExpression = parseToExpression' NoneState
+parseToExpression = pda StartS [Z] 
 
-data ParseState = VarState | AbsState | AppState | NoneState
-
-parseToExpression' :: ParseState -> String -> Expression
-parseToExpression' NoneState (x:xs) = error ""
-     
+pda :: State -> [StackAlphabet] -> String -> Expression
+pda state stack (x:xs) = Var "x"
+pda _ _ _ = Var "x"

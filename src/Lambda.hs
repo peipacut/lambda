@@ -11,8 +11,8 @@ data Expression = Var Variable | Abstract Variable Expression | Apply Expression
 
 instance Show Expression where
     show (Var v) = show v
-    show (Abstract var term) = "\\" ++ (show var) ++ "." ++ (show term)
-    show (Apply t1 t2) = "(" ++ (show t1) ++ ")(" ++ (show t2) ++ ")"
+    show (Abstract var term) = "\\" ++ show var ++ "." ++ show term
+    show (Apply t1 t2) = "(" ++ show t1 ++ ")(" ++ show t2 ++ ")"
 
 -- | applies alpha conversion on the given term by replacing the bound
 --   variable with the given one. Only works on abstractions.
