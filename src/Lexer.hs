@@ -1,7 +1,10 @@
+module Lexer (parseToExpression) where
+
 import Lambda 
 
 data StackAlphabet = Z | S | A
-data State = Init | Body | AbstractionStart | AbstractionHead | AbstractionBody | SVar | SApp | Complete
+data State = Init | Body | AbstractionStart | AbstractionHead 
+    | AbstractionBody | SVar | SApp | Complete
 
 parseToExpression :: String -> Expression
 parseToExpression str = pda Init str [Z]
