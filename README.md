@@ -1,4 +1,4 @@
 # lambda
-lambda calculus in haskell?!?!?!??
+the lambda calculus in haskell?!?!?!??
 
 they said it couldnt be done..
