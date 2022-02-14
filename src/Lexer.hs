@@ -1,51 +1,56 @@
 module Lexer (parseToExpression) where
 
 import Lambda 
+import Data.Char
+import Debug.Trace
 
-data StackAlphabet = Z | S | A
+data StackAlphabet = Z | A deriving (Show, Eq)
 data State = Init | Body | AbstractionStart | AbstractionHead 
-    | AbstractionBody | SVar | SApp | Complete
+    | AbstractionBody | SVar | SApp | Complete 
+        deriving Show
 
 parseToExpression :: String -> Expression
 parseToExpression str = pda Init str [Z]
 
+trace' x s f = trace (s ++ " " ++ show x) f
+
 pda :: State -> String -> [StackAlphabet] -> Expression
 
-pda Init (x:xs) [Z] = pda Body xs [s', Z]
-    where
-        s' = if x == '(' then A else S
-pda Body (x:xs) stack = case x of
-    '\\' -> pda AbstractionStart xs stack
-    '('  -> pda Body xs (A:stack)
-    _    -> pda SVar xs (S:stack)
+pda Init (x:xs) [Z] 
+    | x == '(' = trace' x "init " $ pda Body xs [A, Z]
+    | otherwise = error "must start with ("
+
+pda Body (x:xs) stack@(_:st)
+    | x == '\\'  = trace' x "body" $ pda AbstractionStart xs stack
+    | x == '('   = trace' x "body" $ pda Body xs (A:stack)
+    | x == ')'   = trace' x "body" $ pda SApp xs st
+    | isLetter x = trace' x "body" $ pda SVar xs stack
+    | otherwise  = error "invalid token"
     
-pda AbstractionStart (_:xs) stack = pda AbstractionHead xs stack
+pda AbstractionStart (x:xs) stack  
+    | isLetter x = trace' x "abstractionstart" $ pda AbstractionHead xs stack
+    | otherwise  = error "bound variable must start with a letter"
 
-pda AbstractionHead (x:xs) stack = case x of
-    '.' -> pda AbstractionBody xs stack
-    _   -> pda AbstractionHead xs stack
-
+pda AbstractionHead (x:xs) stack 
+    | isAlphaNum x = trace' x "abstractionhead" $ pda AbstractionHead xs stack
+    | x == '.'     = trace' x "abstractionhead" $ pda AbstractionBody xs stack
+    | otherwise    = error "bound variable must have one letter followed by alphanumeric characters"
+    
 pda AbstractionBody (x:xs) stack = case x of
-    '(' -> pda Body xs (A:stack)
-    _   -> pda Body xs (S:stack)
+    '(' -> trace' x "abstractionbody" $ pda Body xs (A:stack)
+    _   -> error "must start new scope with ( after variable bind"
 
-pda SVar (x:xs) stack@(s:st) = case x of
-    '(' -> pda Body xs (A:stack)
-    ')' -> case s of 
-        A -> pda SApp xs st
-        _ -> error "mismatching brackets"
-    _ -> pda SVar xs stack
+pda SVar (x:xs) stack@(_:st) 
+    | x == '('     = trace' x "svar" $ pda Body xs (A:stack)
+    | x == ')'     = trace' x "svar" $ pda SApp xs (st)
+    | isAlphaNum x = trace' x "svar" $ pda SVar xs stack
 
-pda SApp (x:xs) stack@(s:st) = case (x, s) of
-    (_  , Z) -> pda Complete xs st
-    (')', A) -> pda SApp xs st
-    ('(', A) -> pda Body xs stack
-    ('(', S) -> pda Body xs stack
-    (_  , S) -> pda SApp xs st
-    (_  , A) -> pda Body xs stack
+pda SApp [] [Z] = pda Complete [] [Z]
+pda SApp s@(x:xs) stack@(_:st) 
+    | x == ')'               = trace' x "sapp" $ pda SApp xs st
+    | x == '(' || isLetter x = trace' x "sapp" $ pda Body xs stack
 
--- TODO: need base case
-pda Complete _ _ = Var "x"
+pda Complete _ _ = Var "yatta"
 
-pda _ _ _ = error "invalid state"
+pda a b c = error ("invalid state -> " ++ show a ++ " " ++ show b ++ " " ++ show c)
 
