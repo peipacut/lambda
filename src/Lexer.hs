@@ -4,6 +4,7 @@ import Lambda
 import Data.Char
 import Debug.Trace
 
+
 data StackAlphabet = Z | A deriving (Show, Eq)
 data State = Init | Body | AbstractionStart | AbstractionHead 
     | AbstractionBody | SVar | SApp | Complete 
@@ -12,8 +13,7 @@ data State = Init | Body | AbstractionStart | AbstractionHead
 parseToExpression :: String -> Expression
 parseToExpression str = pda Init str [Z]
 
-trace' x s f = trace (s ++ " " ++ show x) f
-
+-- see the visual representation of this automaton at docs/automaton.pdf
 pda :: State -> String -> [StackAlphabet] -> Expression
 
 pda Init (x:xs) [Z] 
@@ -29,6 +29,7 @@ pda Body (x:xs) stack@(_:st)
     
 pda AbstractionStart (x:xs) stack  
     | isLetter x = trace' x "abstractionstart" $ pda AbstractionHead xs stack
+    | isSpace x  = trace' x "abstractionstart" $ pda AbstractionStart xs stack
     | otherwise  = error "bound variable must start with a letter"
 
 pda AbstractionHead (x:xs) stack 
@@ -45,12 +46,18 @@ pda SVar (x:xs) stack@(_:st)
     | x == ')'     = trace' x "svar" $ pda SApp xs (st)
     | isAlphaNum x = trace' x "svar" $ pda SVar xs stack
 
-pda SApp [] [Z] = pda Complete [] [Z]
 pda SApp s@(x:xs) stack@(_:st) 
     | x == ')'               = trace' x "sapp" $ pda SApp xs st
     | x == '(' || isLetter x = trace' x "sapp" $ pda Body xs stack
+
+pda SApp [] [Z] = pda Complete [] [Z]
 
 pda Complete _ _ = Var "yatta"
 
 pda a b c = error ("invalid state -> " ++ show a ++ " " ++ show b ++ " " ++ show c)
 
+showTrace = True
+
+trace' x s f 
+    | showTrace = trace (s ++ " " ++ show x) f
+    | otherwise = f
